@@ -1,0 +1,2 @@
+# Do not track build (compiled) files in the build folder.
+build/*
