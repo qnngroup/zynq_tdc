@@ -79,6 +79,10 @@ int readTDC(int TDCindex, uint64_t *data){
    TDC[TDCindex].BRAMaddr = addr;   // update AXI address for the next reading session
    
    if (TDC[TDCindex].enabled == 2){ // for paired channels -> synced clearing
+      // Note by Maurice: the following two if-statements imply that both START and STOP buffer data
+      //                  will be emptied, immediately, in the case you are now reading the START TDC
+      //                  even though the STOP TDC might have important data still available. So, 
+      //                  make sure to always first read the TDC STOP index channel data.
       if (TDCindex == pairedTDCs[0]){  // trigger channel (read last)
          stopFull = *(TDC[pairedTDCs[1]].conf + READ) & FULL;  // full bit of stop channel
          if (addr == BRAMsize || stopFull){   // clear if trigger full or stop channel full
@@ -167,6 +171,7 @@ int main(void){
    uint16_t command = 0;  // input buffer (2 bytes)
    uint64_t dataBuffer[BRAMsize]; // output buffer = the size of BRAM
    uint64_t emptyWord = 0; // empty 64-bit word
+   uint64_t errorState = 10; // MK: means of communicating an error in setting up a condition.
    uint64_t Nstamps; // number of sent data
    
    int raw_temp;   // chip temperature raw reading
@@ -257,14 +262,25 @@ int main(void){
                         *(TDC[TDCindex].conf + WRITE) |= (1 << RUN); // set RUN back to 1
                      }
                      TDC[TDCindex].BRAMaddr = 0;   // restart AXI address
+
+                     // MK: Confirm ready to host.
+                     send(sock_client, &emptyWord, 8, MSG_NOSIGNAL); // emptyWord = 0;
+                  } else {
+                     // MK: Communicate error to host.
+                     send(sock_client, &errorState, 8, MSG_NOSIGNAL); // errorState = 10.
                   }
+                  
                   break;
                   
                case 4:  // synchronously start TWO channels in parallel -> two consecutive '4' operations
-                  TDCindexSTART = TDCindex;  // START TDC index
-                  rx = recv(sock_client, &command, 2, MSG_WAITALL);  // wait for the STOP index
-                  TDCindexSTOP = command & 0xFF; // lower byte
-                  op = command >> 8;   // upper byte
+                  TDCindexSTART = TDCindex & 0x0F;  // START TDC index
+                  // Encoding change suggested by Maurice to reduce communication overhead (only works for max 2 channels).
+                  TDCindexSTOP  = (TDCindex & 0xF0 >> 4) & 0x0F; // STOP TDC index, encoded in the upper bits of the LSB.
+                  // MK::obs //rx = recv(sock_client, &command, 2, MSG_WAITALL);  // wait for the STOP index
+                  // MK::obs //TDCindexSTOP = command & 0xFF; // lower byte
+                  // MK::obs //op = command >> 8;   // upper byte
+                  printf("START index %i, STOP index %i\n---\n", TDCindexSTART, TDCindexSTOP);
+                  // op == 4 should now be implied because I am already in this case, but anyhow...
                   if (op == 4){
                      TDC[TDCindexSTART].clearing = 0;
                      TDC[TDCindexSTOP].clearing = 0;
