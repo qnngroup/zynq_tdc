@@ -294,9 +294,11 @@ int main(void){
                      TDC[TDCindexSTOP].enabled = 2;
                      pairedTDCs[0] = TDCindexSTART;
                      pairedTDCs[1] = TDCindexSTOP;
-                     
+                     send(sock_client, &emptyWord, 8, MSG_NOSIGNAL); // emptyWord = 0;
                   }else{
                      printf("ERROR: Unexpected command!\n");
+                     // MK: Communicate error to host.
+                     send(sock_client, &errorState, 8, MSG_NOSIGNAL); // errorState = 10.
                   }
                   break;
                   
