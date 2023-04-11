@@ -275,7 +275,7 @@ int main(void){
                case 4:  // synchronously start TWO channels in parallel -> two consecutive '4' operations
                   TDCindexSTART = TDCindex & 0x0F;  // START TDC index
                   // Encoding change suggested by Maurice to reduce communication overhead (only works for max 2 channels).
-                  TDCindexSTOP  = (TDCindex & 0xF0 >> 4) & 0x0F; // STOP TDC index, encoded in the upper bits of the LSB.
+                  TDCindexSTOP  = ((TDCindex & 0xF0) >> 4) & 0x0F; // STOP TDC index, encoded in the upper bits of the LSB.
                   // MK::obs //rx = recv(sock_client, &command, 2, MSG_WAITALL);  // wait for the STOP index
                   // MK::obs //TDCindexSTOP = command & 0xFF; // lower byte
                   // MK::obs //op = command >> 8;   // upper byte
