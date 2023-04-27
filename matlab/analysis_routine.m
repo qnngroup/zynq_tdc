@@ -6,12 +6,16 @@
 %  be analysed and used to form a probability map for temporally and
 %  spectrally resolved single photon counts.
 %
+%  Data in the ./example_data folder is obtained as part of an experimental
+%  run on 3/31/2023, and further available and described in the related
+%  Google Drive QNN project folder for heralded source (see logbook data
+%  Maurice).
 clearvars; clc;
 
 %% Pointing to raw data files and series definition.
 % Provide a base path to the raw data files. The following file format is
 % assumed: path/to/files/<filename>_<wavelength>.txt.
-basePath = '../../2023-03-31/plasmonics/oversample-64_';
+basePath = 'example_data/oversample-64_';
 
 % List of <wavelength> values in the filenames.
 wavelengths = 400:5:710;
